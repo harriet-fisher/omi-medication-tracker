@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: jodi-meds
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn simple_server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MEDS_CSV_PATH
+        value: /var/data/medications/medications.csv
+    disk:
+      name: meds-data
+      mountPath: /var/data/medications
+      sizeGB: 1
