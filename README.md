@@ -39,8 +39,14 @@ http://YOUR_IP:8000/medication-tracker
 
 ## ⚙️ Configuration
 - `MEDS_CSV_PATH` (optional): path to the CSV file. Defaults to `medications.csv`.
-  - Example (Render default via render.yaml): `/var/data/medications/medications.csv`
+  - Example (Render default via render.yaml): `/opt/render/project/src/data/medications.csv`
   - The app will auto-create directories and the CSV header if missing.
+  
+Optional OMI Imports (Conversations/Memories):
+- `OMI_APP_ID`: your OMI app id
+- `OMI_API_KEY`: your OMI app API key
+- `OMI_IMPORT_TYPE` (optional): `conversation` or `memories` (defaults to `conversation`)
+- When set, each successful log also creates an OMI conversation or memory entry with the details. See OMI Imports docs: https://docs.omi.me/doc/developer/apps/Import
 
 ## 🧩 Files
 - `simple_medication_tracker.py` (core CSV logger)

@@ -12,6 +12,7 @@ import uvicorn
 import logging
 from datetime import datetime
 import os
+import requests
 
 # Import our simple tracker
 from simple_medication_tracker import SimpleMedicationTracker
@@ -36,6 +37,70 @@ session_states = {}
 class TranscriptData(BaseModel):
     segments: List[Dict]
     session_id: Optional[str] = None
+
+
+def omi_import_enabled() -> bool:
+    return bool(os.getenv("OMI_APP_ID") and os.getenv("OMI_API_KEY"))
+
+
+def create_omi_record(uid: str, medication_info: Dict[str, str]) -> None:
+    """Optionally create an OMI conversation or memory after CSV log.
+    Controlled by env vars:
+      - OMI_APP_ID (required)
+      - OMI_API_KEY (required)
+      - OMI_IMPORT_TYPE = conversation | memories (default: conversation)
+    """
+    if not omi_import_enabled():
+        return
+
+    app_id = os.getenv("OMI_APP_ID")
+    api_key = os.getenv("OMI_API_KEY")
+    import_type = (os.getenv("OMI_IMPORT_TYPE") or "conversation").lower()
+
+    text = (
+        f"Medication log: Took {medication_info.get('dosage')} of "
+        f"{medication_info.get('medication')} at {medication_info.get('timestamp')} "
+        f"on {medication_info.get('date')}."
+    )
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        if import_type == "memories":
+            url = f"https://api.omi.me/v2/integrations/{app_id}/user/memories"
+            payload: Dict[str, object] = {
+                "memories": [
+                    {
+                        "content": text,
+                        "tags": ["medication", "health"],
+                    }
+                ],
+                "text_source": "other",
+                "text_source_spec": "medication_app",
+            }
+        else:
+            url = f"https://api.omi.me/v2/integrations/{app_id}/user/conversations"
+            payload = {
+                "text": text,
+                "text_source": "other_text",
+                "text_source_spec": "medication_app",
+                "language": "en",
+            }
+
+        response = requests.post(
+            f"{url}?uid={uid}", headers=headers, json=payload, timeout=5
+        )
+        if response.status_code != 200:
+            logger.warning(
+                f"⚠️ OMI import failed: {response.status_code} - {response.text[:200]}"
+            )
+        else:
+            logger.info("📝 OMI import created successfully")
+    except Exception as e:
+        logger.warning(f"⚠️ OMI import exception: {e}")
 
 @app.post("/medication-tracker")
 async def process_medication_transcript(
@@ -112,6 +177,8 @@ async def process_medication_transcript(
                 session_state["last_processed"] = text
                 
                 if success:
+                    # Optionally send to OMI Imports
+                    create_omi_record(uid, medication_info)
                     logger.info(f"✅ Medication logged successfully: {medication_info}")
                     return {
                         "status": "logged",
