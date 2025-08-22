@@ -13,6 +13,7 @@ import logging
 from datetime import datetime
 import os
 import requests
+from fastapi.responses import FileResponse
 
 # Import our simple tracker
 from simple_medication_tracker import SimpleMedicationTracker
@@ -231,6 +232,22 @@ async def get_medications(uid: str = Query(...), days: int = 7):
         logger.error(f"❌ Error in get_medications: {e}")
         return {"error": "Internal server error"}
 
+@app.get("/download-csv")
+async def download_csv():
+    """Download the medications CSV file directly"""
+    try:
+        if os.path.exists(tracker.csv_file):
+            return FileResponse(
+                path=tracker.csv_file,
+                filename="medications.csv",
+                media_type="text/csv"
+            )
+        else:
+            raise HTTPException(status_code=404, detail="CSV file not found")
+    except Exception as e:
+        logger.error(f"❌ Error downloading CSV: {e}")
+        raise HTTPException(status_code=500, detail="Error downloading CSV")
+
 @app.get("/")
 async def root():
     """Root endpoint with app information"""
@@ -243,7 +260,8 @@ async def root():
             "medication-tracker": "POST - Process medication transcripts",
             "setup-status": "GET - Check app setup status",
             "health": "GET - Health check",
-            "medications": "GET - Get medication history"
+            "medications": "GET - Get medication history",
+            "download-csv": "GET - Download CSV file"
         },
         "setup_instructions": "No external services required! Just run this server and point your Omi device to it."
     }
