@@ -36,10 +36,11 @@ http://YOUR_IP:8000/medication-tracker
 ## 🔎 View History
 - Open `medications.csv` in a spreadsheet
 - Or GET `http://YOUR_IP:8000/medications`
+- Download CSV: `http://YOUR_IP:8000/download-csv`
 
 ## ⚙️ Configuration
 - `MEDS_CSV_PATH` (optional): path to the CSV file. Defaults to `medications.csv`.
-  - Example (Render default via render.yaml): `/opt/render/project/src/data/medications.csv`
+  - Example (Render default via render.yaml): `/opt/render/project/src/medications.csv`
   - The app will auto-create directories and the CSV header if missing.
   
 Optional OMI Imports (Conversations/Memories):
@@ -58,14 +59,14 @@ Optional OMI Imports (Conversations/Memories):
 
 1. Push this repo to GitHub
 2. In Render, create a new Web Service from your repo
-3. Render reads `render.yaml` and creates a service with a persistent disk
-4. `MEDS_CSV_PATH` points to `/opt/render/project/src/data/medications.csv`
-5. Disk mounts at `/opt/render/project/src/data` so the app can write there
-6. Start command uses `uvicorn simple_server:app --host 0.0.0.0 --port $PORT`
+3. Render reads `render.yaml` and creates a service
+4. `MEDS_CSV_PATH` points to `/opt/render/project/src/medications.csv`
+5. Start command uses `uvicorn simple_server:app --host 0.0.0.0 --port $PORT`
 
 Notes:
-- The CSV is written to the attached disk under `data/` so it survives restarts
-- You can download the CSV via the `/medications` endpoint output
+- Free tier: CSV data is ephemeral (lost on redeploy/restart)
+- Download CSV regularly via `/download-csv` endpoint
+- For persistent storage, consider upgrading to paid Render plan with disks
 
 ## 📚 Relevant OMI Docs
 - Introduction: https://docs.omi.me/doc/get_started/introduction
@@ -82,3 +83,4 @@ These docs explain creating an app, enabling External Integration, and pointing 
 - Data is local to this machine in `medications.csv`
 - No cloud keys needed
 - Keep your laptop and OMI device on the same network for webhooks
+- Free tier: download CSV regularly as data is ephemeral
