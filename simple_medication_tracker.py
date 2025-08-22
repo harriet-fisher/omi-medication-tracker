@@ -30,13 +30,32 @@ class SimpleMedicationTracker:
         """Create CSV file with headers if it doesn't exist"""
         # Ensure directory exists if a directory is provided
         directory = os.path.dirname(os.path.abspath(self.csv_file))
-        if directory and not os.path.exists(directory):
-            os.makedirs(directory, exist_ok=True)
+        try:
+            if directory and not os.path.exists(directory):
+                os.makedirs(directory, exist_ok=True)
+        except PermissionError:
+            # Fallback to a writable project-local directory
+            fallback_dir = os.path.join(os.getcwd(), 'data')
+            os.makedirs(fallback_dir, exist_ok=True)
+            logger.warning(f"⚠️  No permission to create '{directory}'. Falling back to '{fallback_dir}'.")
+            self.csv_file = os.path.join(fallback_dir, 'medications.csv')
+            directory = fallback_dir
+        
         if not os.path.exists(self.csv_file):
-            with open(self.csv_file, 'w', newline='', encoding='utf-8') as file:
-                writer = csv.writer(file)
-                writer.writerow(['Date', 'Time', 'Medication', 'Dosage', 'Notes'])
-            logger.info(f"✅ Created new medication log: {self.csv_file}")
+            try:
+                with open(self.csv_file, 'w', newline='', encoding='utf-8') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(['Date', 'Time', 'Medication', 'Dosage', 'Notes'])
+                logger.info(f"✅ Created new medication log: {self.csv_file}")
+            except (PermissionError, FileNotFoundError):
+                # Final fallback to project-local data path
+                fallback_dir = os.path.join(os.getcwd(), 'data')
+                os.makedirs(fallback_dir, exist_ok=True)
+                self.csv_file = os.path.join(fallback_dir, 'medications.csv')
+                with open(self.csv_file, 'w', newline='', encoding='utf-8') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(['Date', 'Time', 'Medication', 'Dosage', 'Notes'])
+                logger.info(f"✅ Created new medication log (fallback): {self.csv_file}")
 
     def _med_matches(self, recorded: str, queried: str) -> bool:
         """Return True if medication names look like a match (case-insensitive, substring)."""

@@ -52,12 +52,13 @@ http://YOUR_IP:8000/medication-tracker
 
 1. Push this repo to GitHub
 2. In Render, create a new Web Service from your repo
-3. Render will read `render.yaml` and create a service with a persistent disk
-4. Environment variable `MEDS_CSV_PATH` is set to `/var/data/medications/medications.csv`
-5. Start command uses `uvicorn simple_server:app --host 0.0.0.0 --port $PORT`
+3. Render reads `render.yaml` and creates a service with a persistent disk
+4. `MEDS_CSV_PATH` points to `/opt/render/project/src/data/medications.csv`
+5. Disk mounts at `/opt/render/project/src/data` so the app can write there
+6. Start command uses `uvicorn simple_server:app --host 0.0.0.0 --port $PORT`
 
 Notes:
-- The CSV is written to the attached disk so it survives restarts
+- The CSV is written to the attached disk under `data/` so it survives restarts
 - You can download the CSV via the `/medications` endpoint output
 
 ## 📚 Relevant OMI Docs
